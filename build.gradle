@@ -44,12 +44,19 @@ jar {
     archiveName = 'scenicview.jar'
 }
 
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
 run {
 	dependsOn jar
 }
 
 artifacts {
-    archives(jar)
+    artifact jar
+    artifact sourceJar
 }
 
 ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
