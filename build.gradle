@@ -45,9 +45,9 @@ jar {
 }
 
 
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
+task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
+    from sourceSets.main.allSource
 }
 
 run {
@@ -55,7 +55,8 @@ run {
 }
 
 artifacts {
-    archives(jar, sourceJar)
+    archives(jar)
+    archives(sourceJar)
 }
 
 ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
