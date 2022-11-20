@@ -55,8 +55,7 @@ run {
 }
 
 artifacts {
-    artifact jar
-    artifact sourceJar
+    archives(jar, sourceJar)
 }
 
 ext.platform = osdetector.os == 'osx' ? 'mac' : osdetector.os == 'windows' ? 'win' : osdetector.os
