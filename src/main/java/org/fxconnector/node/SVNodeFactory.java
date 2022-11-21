@@ -1,6 +1,6 @@
 /*
- * Scenic View, 
- * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler 
+ * Scenic View,
+ * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,51 +23,64 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 
 import org.fxconnector.Configuration;
+import org.scenicview.utils.Logger;
 
 public class SVNodeFactory {
+	public static class SVNodeFactoryImpl {
+		public void dumpNodeInfo(final StringBuilder sb, final Node node) {
+				sb.append("Node:").append(node).append(" Class:").append(node.getClass()).append(" Id:").append(node.getId()).append('\n');
+				if (node instanceof Parent) {
+					sb.append("Children:").append(((Parent) node).getChildrenUnmodifiable()).append('\n');
+				}
+			}
+		public SVNode createNode(Node node, Configuration configuration, boolean remote) {
+				if (remote) {
+					/**
+					 * This may sound strange but if the node has a parent we create an
+					 * SVNode for the parent a we get the correct node latter and if it
+					 * has not then we create a normal node
+					 */
+					final Node parent = node.getParent();
+					if (parent != null) {
+						final SVRemoteNodeAdapter svparent = new SVRemoteNodeAdapter(parent, configuration.isCollapseControls(), configuration.isCollapseContentControls());
+						final List<SVNode> childrens = svparent.getChildren();
+						for (int i = 0; i < childrens.size(); i++) {
+							if (childrens.get(i).equals(node)) {
+								return childrens.get(i);
+							}
+						}
+						final StringBuilder sb = new StringBuilder();
+						sb.append("Error while creating node:" + node.getClass() + " id:" + node.getId()).append('\n');
 
-    private SVNodeFactory() {
-        // no-op
-    }
+						sb.append("NODE INFORMATION\n");
+						dumpNodeInfo(sb, node);
+						sb.append("PARENT INFORMATION\n");
+						dumpNodeInfo(sb, node.getParent());
+						throw new RuntimeException(sb.toString());
 
-    public static SVNode createNode(final Node node, final Configuration configuration, final boolean remote) {
-        if (remote) {
-            /**
-             * This may sound strange but if the node has a parent we create an
-             * SVNode for the parent a we get the correct node latter and if it
-             * has not then we create a normal node
-             */
-            final Node parent = node.getParent();
-            if (parent != null) {
-                final SVRemoteNodeAdapter svparent = new SVRemoteNodeAdapter(parent, configuration.isCollapseControls(), configuration.isCollapseContentControls());
-                final List<SVNode> childrens = svparent.getChildren();
-                for (int i = 0; i < childrens.size(); i++) {
-                    if (childrens.get(i).equals(node)) {
-                        return childrens.get(i);
-                    }
-                }
-                final StringBuilder sb = new StringBuilder();
-                sb.append("Error while creating node:" + node.getClass() + " id:" + node.getId()).append('\n');
+					} else {
+						return new SVRemoteNodeAdapter(node, configuration.isCollapseControls(), configuration.isCollapseContentControls());
+					}
+				} else {
+					return new SVRealNodeAdapter(node, configuration.isCollapseControls(), configuration.isCollapseContentControls());
+				}
+			}
+	};
 
-                sb.append("NODE INFORMATION\n");
-                dumpNodeInfo(sb, node);
-                sb.append("PARENT INFORMATION\n");
-                dumpNodeInfo(sb, node.getParent());
-                throw new RuntimeException(sb.toString());
+	public static SVNodeFactoryImpl INSTANCE;
 
-            } else {
-                return new SVRemoteNodeAdapter(node, configuration.isCollapseControls(), configuration.isCollapseContentControls());
-            }
-        } else {
-            return new SVRealNodeAdapter(node, configuration.isCollapseControls(), configuration.isCollapseContentControls());
-        }
-    }
+	static {
+		INSTANCE = new SVNodeFactoryImpl();
+	}
 
-    private static void dumpNodeInfo(final StringBuilder sb, final Node node) {
-        sb.append("Node:").append(node).append(" Class:").append(node.getClass()).append(" Id:").append(node.getId()).append('\n');
-        if (node instanceof Parent) {
-            sb.append("Children:").append(((Parent) node).getChildrenUnmodifiable()).append('\n');
-        }
-    }
+	private SVNodeFactory() {
+		// no-op
+	}
 
+	public static SVNode createNode(final Node node, final Configuration configuration, final boolean remote) {
+//		Logger.print("Creating node with " + INSTANCE.toString() + " " + node.toString() + " - " + configuration.toString() + " - remote: " + remote);
+		SVNode created = INSTANCE.createNode(node, configuration, remote);
+//		Logger.print("\tCreated svnode: " + created.toString());
+		return created;
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Scenic View, 
+ * Scenic View,
  * Copyright (C) 2014 Jonathan Giles, Ander Ruiz, Amy Fowler, Arnaud Nouard
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 
 import org.fxconnector.node.SVNode;
+import org.scenicview.utils.Logger;
+import org.scenicview.view.ScenegraphTreeView;
 import org.scenicview.view.threedom.ThreeDOM;
 import org.scenicview.view.threedom.Tile3D;
 import org.scenicview.view.ContextMenuContainer;
@@ -37,7 +39,7 @@ import org.scenicview.view.threedom.IThreeDOM;
 
 public class ThreeDOMTab extends Tab implements ContextMenuContainer, IThreeDOM {
 
-    private final ScenicViewGui scenicView;
+    public final ScenicViewGui scenicView;
 
     public static final String TAB_NAME = "ThreeDOM";
 
@@ -110,9 +112,7 @@ public class ThreeDOMTab extends Tab implements ContextMenuContainer, IThreeDOM 
         }
     }
 
-    /**
-     * Recreate the 3D model from current 2D state
-     */
+
     public void reload() {
         if (threeDOM != null) {
             threeDOM.reload(root2D.getChildren().get(0));
@@ -124,11 +124,13 @@ public class ThreeDOMTab extends Tab implements ContextMenuContainer, IThreeDOM 
      */
     public void placeNewRoot(SVNode newRoot) {
         root2D = newRoot;
-        reload();
+//        reload();
     }
 
     public void removeNode(SVNode node) {
+        Logger.print(node.toString());
         if (threeDOM != null) {
+            assert root2D != null;
             threeDOM.reload(root2D);
         }
     }

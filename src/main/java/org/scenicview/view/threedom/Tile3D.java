@@ -1,5 +1,5 @@
 /*
- * Scenic View, 
+ * Scenic View,
  * Copyright (C) 2014 Jonathan Giles, Ander Ruiz, Amy Fowler, Arnaud Nouard
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,11 @@
 package org.scenicview.view.threedom;
 
 import java.util.ArrayList;
+import java.util.Optional;
+
+import javafx.beans.binding.Bindings;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
@@ -30,7 +35,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.transform.Translate;
+import org.fxconnector.node.SVDummyNode;
 import org.fxconnector.node.SVNode;
+import org.scenicview.view.tabs.ThreeDOMTab;
 
 public class Tile3D extends Box {
 
@@ -51,6 +58,15 @@ public class Tile3D extends Box {
         this.factor2d3d = factor2d3d;
         this.iTile3DListener = l;
         this.iThreeDOM = i;
+        this.setVisible(Optional.ofNullable(ThreeDOM.getInstance().getHolder()).map(r->r.scenicView.getTreeView().treeItemVisible(currentRoot2D)).orElse(true));
+//        ThreeDOM.getInstance().getHolder().scenicView.getTreeView().invalidProp.addListener(new ChangeListener<Boolean>() {
+//            @Override
+//            public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+//                if(newValue) {
+//                    setVisible(ThreeDOM.getInstance().getHolder().scenicView.getTreeView().treeItemVisible(currentRoot2D));
+//                }
+//            }
+//        });
 
         node2d = node2D;
         material = new PhongMaterial();
@@ -58,7 +74,7 @@ public class Tile3D extends Box {
         material.setSpecularColor(Color.TRANSPARENT);
 
         Bounds bounds2D = localetoRoot(node2D);
-        //
+
         Bounds bounds3D = new BoundingBox(bounds2D.getMinX() * factor2d3d,
                 bounds2D.getMinY() * factor2d3d,
                 bounds2D.getWidth() * factor2d3d,
@@ -81,7 +97,7 @@ public class Tile3D extends Box {
         });
 //        super.setOnMouseClicked((MouseEvent event) -> {
         super.setOnMousePressed((MouseEvent event) -> {
-           
+
             // Selection
             iTile3DListener.onMouseClickedOnTile(Tile3D.this);
              if(event.isSecondaryButtonDown()){
@@ -101,7 +117,16 @@ public class Tile3D extends Box {
 
     @SuppressWarnings("CallToPrintStackTrace")
     public final void snapshot() {
-        Bounds layoutBounds = node2d.getImpl().getLayoutBounds();
+        if(node2d instanceof SVDummyNode) {
+            return;
+        }
+        Bounds layoutBounds;
+        Node tn = node2d.getImpl();
+        if(tn != null){
+            layoutBounds = node2d.getImpl().getLayoutBounds();
+        } else {
+            layoutBounds = new BoundingBox(0, 0, 1, 1);
+        }
         if (layoutBounds.getWidth() > 0 && layoutBounds.getHeight() > 0) {
             writableImage = new WritableImage((int) layoutBounds.getWidth(), (int) layoutBounds.getHeight());
             SnapshotParameters snapshotParameters = new SnapshotParameters();
@@ -145,8 +170,18 @@ public class Tile3D extends Box {
 
     private Bounds localetoRoot(SVNode sv) {
         Node n = sv.getImpl();
-        Bounds node = n.localToScene(n.getLayoutBounds());
-        Bounds root = currentRoot2D.getImpl().localToScene(currentRoot2D.getImpl().getLayoutBounds());
+        Bounds node;
+        if(n != null) {
+            node = n.localToScene(n.getLayoutBounds());
+        } else {
+            node = new BoundingBox(0, 0, 1, 1);
+        }
+        Bounds root;
+        if(currentRoot2D.getImpl() != null) {
+            root = currentRoot2D.getImpl().localToScene(currentRoot2D.getImpl().getLayoutBounds());
+        } else {
+            root = new BoundingBox(0, 0, 1, 1);
+        }
         return new BoundingBox(node.getMinX() - root.getMinX(), node.getMinY() - root.getMinY(), node.getWidth(), node.getHeight());
     }
 

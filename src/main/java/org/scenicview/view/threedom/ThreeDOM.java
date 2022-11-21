@@ -1,5 +1,5 @@
 /*
- * Scenic View, 
+ * Scenic View,
  * Copyright (C) 2014 Jonathan Giles, Ander Ruiz, Amy Fowler, Arnaud Nouard
  *
  * This program is free software: you can redistribute it and/or modify
@@ -64,6 +64,7 @@ import javafx.util.Duration;
 import org.fxconnector.ConnectorUtils;
 import org.fxconnector.node.SVNode;
 import org.scenicview.utils.PropertiesUtils;
+import org.scenicview.view.tabs.ThreeDOMTab;
 
 /**
  * Main class for 3D display TODO: 2D to 3D Miss: a snapshot parameter to only capture container and not descendants
@@ -113,8 +114,14 @@ public class ThreeDOM implements ITile3DListener {
     RotateTransition rotateTransition;
     ParallelTransition initialParallelTransition;
 
-    public void setHolder(IThreeDOM h) {
-        iThreeDOM = h;
+    public void setHolder(ThreeDOMTab h) {
+        this.iThreeDOM = h;
+    }
+    public ThreeDOMTab getHolder() {
+        if(this.iThreeDOM instanceof ThreeDOMTab) {
+            return ((ThreeDOMTab) this.iThreeDOM);
+        }
+        return null;
     }
 
     public Parent createContent(SVNode root2D) throws Exception {
@@ -168,7 +175,7 @@ public class ThreeDOM implements ITile3DListener {
         };
         world.getChildren().addAll(axes3DRoot, root3D);
 
-        // Use a SubScene       
+        // Use a SubScene
         SubScene subScene = new SubScene(world, 1024, 768, true, SceneAntialiasing.BALANCED);
         subScene.setFill(Color.TRANSPARENT);
         subScene.setCamera(camera);
@@ -444,7 +451,7 @@ public class ThreeDOM implements ITile3DListener {
     @FXML
     public void onDefaultBackgroundColor(ActionEvent ae) {
         subSceneContainer.getStyleClass().add("subSceneBackground");
-        // Prefs 
+        // Prefs
         final Properties properties = PropertiesUtils.getProperties();
         properties.remove(THREEDOM_BACKGROUNDCOLOR);
     }
@@ -453,7 +460,7 @@ public class ThreeDOM implements ITile3DListener {
     public void onColorPicker(ActionEvent ae) {
         Color newColor = colorPicker.getValue();
         applyColor(newColor);
-        // Prefs 
+        // Prefs
         final Properties properties = PropertiesUtils.getProperties();
         properties.put(THREEDOM_BACKGROUNDCOLOR, newColor.toString());
     }

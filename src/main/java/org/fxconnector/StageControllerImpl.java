@@ -1,6 +1,6 @@
 /*
- * Scenic View, 
- * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler, Matthieu Brouillard 
+ * Scenic View,
+ * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler, Matthieu Brouillard
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -130,7 +130,7 @@ public class StageControllerImpl implements StageController {
         }
     };
 
-    private final EventHandler<? super MouseEvent> scenePressListener = 
+    private final EventHandler<? super MouseEvent> scenePressListener =
             ev -> dispatchEvent(new NodeSelectedEvent(getID(), createNode(getHoveredNode(ev.getX(), ev.getY()))));
 
     /**
@@ -149,7 +149,7 @@ public class StageControllerImpl implements StageController {
     final AppController appController;
     int nodeCount;
 
-    private final EventHandler<? super MouseEvent> mousePosListener = 
+    private final EventHandler<? super MouseEvent> mousePosListener =
             ev -> dispatchEvent(new MousePosEvent(getID(), (int) ev.getSceneX() + "x" + (int) ev.getSceneY()));
 
     private final EventHandler<? super KeyEvent> shortcutsHandler;
@@ -161,7 +161,7 @@ public class StageControllerImpl implements StageController {
     public StageControllerImpl(final Parent target, final AppController appController, final boolean realStageController) {
         this.appController = appController;
         this.stageID = new StageID(appController.getID(), ConnectorUtils.getNodeUniqueID(target));
-        
+
         targetScenePropListener = o -> updateSceneDetails();
         targetWindowPropListener = o -> updateWindowDetails();
         targetWindowSceneListener = o -> {
@@ -176,7 +176,7 @@ public class StageControllerImpl implements StageController {
                 update();
             }
         };
-        
+
         selectedNodePropListener = new InvalidationListener() {
             boolean recursive;
 
@@ -189,7 +189,7 @@ public class StageControllerImpl implements StageController {
                 }
             }
         };
-        
+
         shortcutsHandler = ev -> {
             if (ev.isControlDown() && ev.isShiftDown()) {
                 dispatchEvent(new ShortcutEvent(getID(), ev.getCode()));
@@ -294,7 +294,7 @@ public class StageControllerImpl implements StageController {
         if (refresher != null) {
             refresher.finish();
         }
-        if (windowChecker != null) { 
+        if (windowChecker != null) {
             windowChecker.finish();
         }
         dispatcher = null;
@@ -307,8 +307,8 @@ public class StageControllerImpl implements StageController {
         details = new AllDetails(model2gui, getID());
         setTarget(target);
         update();
-        
-        
+
+
     }
 
     @Override public boolean isOpened() {
@@ -615,7 +615,7 @@ public class StageControllerImpl implements StageController {
             if (selectedNode != null) {
                 selectedNode.boundsInParentProperty().addListener(selectedNodePropListener);
                 selectedNode.layoutBoundsProperty().addListener(selectedNodePropListener);
-                
+
 //                // we also need to track if this node is contained within a SubScene,
 //                // as that will impact the bounds
 //                Parent p = selectedNode.getParent();
@@ -640,7 +640,7 @@ public class StageControllerImpl implements StageController {
         updateBaseline();
         details.setTarget(this.selectedNode);
     }
-    
+
     @Override
     public void removeSelectedNode() {
         if(selectedNode!=null && selectedNode.getParent()!=null) {
@@ -740,7 +740,7 @@ public class StageControllerImpl implements StageController {
                 node.removeEventFilter(Event.ANY, traceEventHandler);
                 if (configuration.isEventLogEnabled())
                     node.addEventFilter(Event.ANY, traceEventHandler);
-                
+
                 ObservableList<Node> children = ChildrenGetter.getChildren(node);
                 children.removeListener(structureInvalidationListener);
                 children.addListener(structureInvalidationListener);
@@ -831,9 +831,9 @@ public class StageControllerImpl implements StageController {
             if (dispatcher == null) {
                 return;
             }
-            
+
             EventType et = event.getEventType();
-            
+
             switch (et) {
             case STYLESHEET_MONITORED:
             case STYLESHEET_REMOVED:
@@ -848,7 +848,7 @@ public class StageControllerImpl implements StageController {
                 break;
             }
         }
-        
+
         private SVNode fromCSSEventOrigin(MonitoredStylesheet ms) {
             if (ms.getScene() != null) {
                 Scene s = ms.getScene();
@@ -858,11 +858,11 @@ public class StageControllerImpl implements StageController {
                     title = ((Stage) w).getTitle();
                 }
                 return new SVDummyNode(title, "Stage", getID().getStageID(), NodeType.STAGE);
-            } 
-            
+            }
+
             return createNode(ms.getParent());
         }
-        
+
         private SVEventType fromCSSEvent(EventType et) {
             switch (et) {
             case STYLESHEET_MONITORED:
@@ -877,7 +877,7 @@ public class StageControllerImpl implements StageController {
             return null;
         }
     };
-    
+
     public Consumer<CSSFXEvent<?>> getCSSFXEventListener() {
         return eventTranslator;
     }

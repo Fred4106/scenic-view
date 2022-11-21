@@ -1,6 +1,6 @@
 /*
- * Scenic View, 
- * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler 
+ * Scenic View,
+ * Copyright (C) 2012 Jonathan Giles, Ander Ruiz, Amy Fowler
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -95,7 +95,7 @@ import org.scenicview.view.tabs.ThreeDOMTab;
  * The base UI
  */
 public class ScenicViewGui {
-    
+
     private static final String HELP_URL = "http://fxexperience.com/scenic-view/help";
     public static final String STYLESHEETS = ScenicViewGui.class.getResource("scenicview.css").toExternalForm();
     public static final Image APP_ICON = DisplayUtils.getUIImage("mglass.png");
@@ -113,7 +113,7 @@ public class ScenicViewGui {
     private final Stage scenicViewStage;
     private BorderPane rootBorderPane;
     private SplitPane splitPane;
-    
+
     // menu bar area
     private MenuBar menuBar;
     private CheckMenuItem showFilteredNodesInTree;
@@ -122,25 +122,25 @@ public class ScenicViewGui {
     private CheckMenuItem componentSelectOnClick;
     private CheckMenuItem showInvisibleNodes;
     private CheckMenuItem showSearchBar;
-    
+
     // filter area
 //    private TitledPane filtersPane;
     private FilterTextField propertyFilterField;
     private List<NodeFilter> activeNodeFilters;
-    
+
     // tree area
     private Node treeViewScanningPlaceholder;
     private ScenegraphTreeView treeView;
-    
+
     // search bar area
     private GridPane searchBar;
-    
+
     // status bar area
     private StatusBar statusBar;
-    
+
     private VBox bottomVBox;
 
-    
+
 
     public final Configuration configuration = new Configuration();
     private final List<FXConnectorEvent> eventQueue = new LinkedList<>();
@@ -194,11 +194,11 @@ public class ScenicViewGui {
     };
 
 //    private final List<AppController> apps = new ArrayList<AppController>();
-    private final AppsRepository appRepository; 
-    
+    private final AppsRepository appRepository;
+
     public StageController activeStage;
     private SVNode selectedNode;
-    
+
     private TabPane tabPane;
     private DetailsTab detailsTab;
     private EventLogTab eventsTab;
@@ -213,32 +213,42 @@ public class ScenicViewGui {
         Runtime.getRuntime().addShutdownHook(shutdownHook);
         buildUI();
 //        checkNewVersion(false);
-        
+
         this.appRepository = new AppsRepository(this);
         this.updateStrategy = updateStrategy;
         this.updateStrategy.start(appRepository);
-        
+
         // we update Scenic View on a separate thread, based on events coming
         // in from FX Connector. The events arrive into the eventQueue, and
         // are processed here
         Timeline eventDispatcher = new Timeline(new KeyFrame(Duration.millis(60), event -> {
             // No need to synchronize
+            boolean foundOne = false;
             while (!eventQueue.isEmpty()) {
+                if(!foundOne) {
+                    startDispatchEvent();
+//                    Logger.print("Dispatch Started");
+                }
+                foundOne = true;
                 try {
                     doDispatchEvent(eventQueue.remove(0));
                 } catch (final Exception e) {
                     ExceptionLogger.submitException(e);
                 }
             }
+            if(foundOne) {
+                endDispatchEvent();
+//                Logger.print("Dispatch Endded!");
+            }
         }));
         eventDispatcher.setCycleCount(Animation.INDEFINITE);
         eventDispatcher.play();
     }
-    
+
     private void buildUI() {
         rootBorderPane = new BorderPane();
         rootBorderPane.setId(StageController.FX_CONNECTOR_BASE_ID + "scenic-view");
-        
+
         // search bar
         buildFiltersBox();
 
@@ -249,7 +259,7 @@ public class ScenicViewGui {
         splitPane = new SplitPane();
         splitPane.setId("main-splitpane");
 
-        
+
         // treeview
         treeView = new ScenegraphTreeView(activeNodeFilters, this);
         treeViewScanningPlaceholder = new VBox(10) {
@@ -258,21 +268,21 @@ public class ScenicViewGui {
                 Label label = new Label("Scanning for JavaFX applications");
                 label.getStyleClass().add("scanning-label");
                 getChildren().addAll(progress, label);
-                
+
                 setAlignment(Pos.CENTER);
-                
+
                 treeView.expandedItemCountProperty().addListener(o -> {
                     setVisible(treeView.getExpandedItemCount() == 0);
                 });
-                
+
             }
         };
-        
+
         StackPane treeViewStackPane = new StackPane(treeView, treeViewScanningPlaceholder);
         treeViewStackPane.setStyle(" -fx-padding: 0");
 
         treeView.setMaxHeight(Double.MAX_VALUE);
-        
+
         // right side
         detailsTab = new DetailsTab(this, new Consumer<String>() {
             @Override public void accept(String property) {
@@ -285,33 +295,33 @@ public class ScenicViewGui {
         tabPane = new TabPane();
         tabPane.getSelectionModel().selectedItemProperty().addListener((ov, oldValue, newValue) -> updateMenuBar(oldValue, newValue));
 
-        javadocTab = new JavaDocTab(this); 
-        
+        javadocTab = new JavaDocTab(this);
+
         eventsTab = new EventLogTab(this);
         eventsTab.activeProperty().addListener((ov, oldValue, newValue) -> {
             configuration.setEventLogEnabled(newValue);
             configurationUpdated();
         });
-        
+
         // 3Dom
-        threeDOMTab = new ThreeDOMTab(this); 
-        
+        threeDOMTab = new ThreeDOMTab(this);
+
         // CSSFX
         cssfxTab = new CSSFXTab(this);
-        
+
         tabPane.getTabs().addAll(detailsTab, eventsTab, /*animationsTab,*/ javadocTab, threeDOMTab, cssfxTab);
         // /3Dom
-        
+
         Persistence.loadProperty("splitPaneDividerPosition", splitPane, 0.3);
 
         // putting it all together
         splitPane.getItems().addAll(treeViewStackPane, tabPane);
 
         rootBorderPane.setCenter(splitPane);
-        
+
         // status bar
         statusBar = new StatusBar();
-        
+
         bottomVBox = new VBox(searchBar, statusBar);
 
         rootBorderPane.setBottom(bottomVBox);
@@ -319,7 +329,7 @@ public class ScenicViewGui {
         Persistence.loadProperty("stageWidth", scenicViewStage, 800);
         Persistence.loadProperty("stageHeight", scenicViewStage, 800);
     }
-    
+
     private void buildFiltersBox() {
         propertyFilterField = createFilterField("Type property names or values here", null);
         propertyFilterField.setOnKeyReleased(new EventHandler<KeyEvent>() {
@@ -328,19 +338,19 @@ public class ScenicViewGui {
             }
         });
         propertyFilterField.setDisable(true);
-        
+
         final FilterTextField idFilterField = createFilterField("Type Node ID's here");
         idFilterField.setOnButtonClick(() -> {
             idFilterField.setText("");
             update();
         });
-        
+
         final FilterTextField classNameFilterField = createFilterField("Type class names here");
         classNameFilterField.setOnButtonClick(() -> {
             classNameFilterField.setText("");
             update();
         });
-        
+
         searchBar = new GridPane();
         searchBar.setVgap(5);
         searchBar.setHgap(5);
@@ -353,11 +363,11 @@ public class ScenicViewGui {
         GridPane.setHgrow(propertyFilterField, Priority.ALWAYS);
 
         int column = 1;
-        
+
         Label nodeIdFilterLabel = new Label("Node ID Filter:");
         Label classNameFilterLabel = new Label("Class Name Filter:");
         Label propertyFilterLabel = new Label("Property Filter:");
-        
+
         searchBar.add(nodeIdFilterLabel, column++, 1);
         searchBar.add(idFilterField, column++, 1);
         searchBar.add(classNameFilterLabel, column++, 1);
@@ -389,7 +399,7 @@ public class ScenicViewGui {
                 return false;
             }
         });
-        
+
         activeNodeFilters.add(new NodeFilter() {
             @Override public boolean allowChildrenOnRejection() {
                 return false;
@@ -407,7 +417,7 @@ public class ScenicViewGui {
                 return false;
             }
         });
-        
+
         activeNodeFilters.add(new NodeFilter() {
             @Override public boolean allowChildrenOnRejection() {
                 return true;
@@ -427,7 +437,7 @@ public class ScenicViewGui {
                 return !idFilterField.getText().equals("");
             }
         });
-        
+
         activeNodeFilters.add(new NodeFilter() {
             @Override public boolean allowChildrenOnRejection() {
                 return true;
@@ -450,7 +460,7 @@ public class ScenicViewGui {
             }
         });
     }
-    
+
     private void buildMenuBar() {
         menuBar = new MenuBar();
         menuBar.setUseSystemMenuBar(true);
@@ -464,7 +474,7 @@ public class ScenicViewGui {
 //
 //                final String toolsPath = properties.getProperty(ScenicViewBooter.JDK_PATH_KEY);
 //                final File jdkPathFile = new ClassPathDialog(toolsPath).show(scenicViewStage);
-//                
+//
 //                if (jdkPathFile != null) {
 //                    properties.setProperty(ScenicViewBooter.JDK_PATH_KEY, jdkPathFile.getAbsolutePath());
 //                    PropertiesUtils.saveProperties();
@@ -534,15 +544,15 @@ public class ScenicViewGui {
             configurationUpdated();
         });
         configuration.setAutoRefreshSceneGraph(automaticScenegraphStructureRefreshing.isSelected());
-        
-        
+
+
         // --- show search bar
         showSearchBar = buildCheckMenuItem("Show Search Bar", "Shows a search bar to allow you to filter the displayed information",
                 "Shows a search bar to allow you to filter the displayed information", "showSearchBar", Boolean.TRUE);
         searchBar.visibleProperty().bind(showSearchBar.selectedProperty());
         searchBar.managedProperty().bind(showSearchBar.selectedProperty());
 
-        
+
         // --- show invisible nodes
         showInvisibleNodes = buildCheckMenuItem("Show Invisible Nodes In Tree", "Invisible nodes will be faded in the scenegraph tree",
                 "Invisible nodes will not be shown in the scenegraph tree", "showInvisibleNodes", Boolean.FALSE);
@@ -552,13 +562,13 @@ public class ScenicViewGui {
         };
         showInvisibleNodes.selectedProperty().addListener(visilityListener);
 
-        
+
         // --- show node IDs in tree
         showNodesIdInTree = buildCheckMenuItem("Show Node IDs", "Node IDs will be shown on the scenegraph tree",
                 "Node IDs will not be shown the Scenegraph tree", "showNodesIdInTree", Boolean.FALSE);
         showNodesIdInTree.selectedProperty().addListener(o -> update());
 
-        
+
         // --- show filtered nodes in tree
         showFilteredNodesInTree = buildCheckMenuItem("Show Filtered Nodes In Tree", "Filtered nodes will be faded in the tree",
                 "Filtered nodes will not be shown in tree (unless they are parents of non-filtered nodes)", "showFilteredNodesInTree", Boolean.TRUE);
@@ -634,14 +644,14 @@ public class ScenicViewGui {
 //        configuration.setRulerSeparation(rulerConfig.rulerSeparationProperty().get());
 //        ruler.getItems().addAll(showRuler, rulerConfig);
 
-        displayOptionsMenu.getItems().addAll(showBoundsCheckbox, 
-                                             showBaselineCheckbox, 
+        displayOptionsMenu.getItems().addAll(showBoundsCheckbox,
+                                             showBaselineCheckbox,
 //                                             showRuler,
-                                             showSearchBar, 
-                                             showFilteredNodesInTree, 
-                                             showInvisibleNodes, 
-                                             showNodesIdInTree, 
-                                             collapseControls, 
+                                             showSearchBar,
+                                             showFilteredNodesInTree,
+                                             showInvisibleNodes,
+                                             showNodesIdInTree,
+                                             collapseControls,
                                              collapseContentControls);
 
         final Menu aboutMenu = new Menu("Help");
@@ -665,7 +675,7 @@ public class ScenicViewGui {
 
         rootBorderPane.setTop(menuBar);
     }
-    
+
     private void updateMenuBar(final Tab oldValue, final Tab newValue) {
         if (oldValue != null && oldValue instanceof ContextMenuContainer) {
             Menu menu = ((ContextMenuContainer) oldValue).getMenu();
@@ -722,20 +732,20 @@ public class ScenicViewGui {
 //            ExceptionLogger.submitException(e);
 //        }
 //    }
-    
+
     public void removeApp(final AppController appController) {
         treeView.removeApp(appController);
     }
-    
+
     public void removeStage(final StageController stageController) {
         treeView.removeStage(stageController);
     }
-    
+
     public void setActiveStage(final StageController activeStage) {
         this.activeStage = activeStage;
         cssfxTab.setActiveStage(activeStage.getID());
     }
-    
+
     public FXConnectorEventDispatcher getStageModelListener() {
         return stageModelListener;
     }
@@ -801,7 +811,7 @@ public class ScenicViewGui {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" }) 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public String findProperty(final String className, final String property) {
         Class node = null;
         try {
@@ -865,7 +875,7 @@ public class ScenicViewGui {
     public SVNode getSelectedNode() {
         return selectedNode;
     }
-    
+
     public void removeNode() {
         activeStage.removeSelectedNode();
     }
@@ -995,7 +1005,7 @@ public class ScenicViewGui {
     public void forceUpdate() {
         update();
     }
-    
+
     public void goToTab(String tabName) {
         Tab switchToTab = null;
         for (Tab tab : tabPane.getTabs()) {
@@ -1004,18 +1014,30 @@ public class ScenicViewGui {
                 break;
             }
         }
-        
+
         if (switchToTab != null) {
             tabPane.getSelectionModel().select(switchToTab);
         }
     }
-    
+
+    public boolean needToReloadTreetab = false;
+    private void startDispatchEvent(){
+        needToReloadTreetab =false;
+    }
+    private void endDispatchEvent(){
+        if(needToReloadTreetab) {
+            threeDOMTab.reload();
+        }
+    }
     private void doDispatchEvent(final FXConnectorEvent appEvent) {
+//        Logger.print("DoDispatch " + appEvent.toString());
+        boolean tempNeedsReload = needToReloadTreetab;
+        needToReloadTreetab = false;
         switch (appEvent.getType()) {
             case EVENT_LOG: {
                 eventsTab.trace((EvLogEvent) appEvent);
                 break;
-            }                
+            }
             case MOUSE_POSITION: {
                 if (isActive(appEvent.getStageID()))
                     statusBar.updateMousePosition(((MousePosEvent) appEvent).getPosition());
@@ -1068,10 +1090,11 @@ public class ScenicViewGui {
                 break;
             }
             case ROOT_UPDATED: {
-                treeView.updateStageModel(getStageController(appEvent.getStageID()), 
-                                         ((NodeAddRemoveEvent) appEvent).getNode(), 
+                treeView.updateStageModel(getStageController(appEvent.getStageID()),
+                                         ((NodeAddRemoveEvent) appEvent).getNode(),
                                          showNodesIdInTree.isSelected(),
                                          showFilteredNodesInTree.isSelected());
+                needToReloadTreetab = true;
                 threeDOMTab.placeNewRoot(((NodeAddRemoveEvent) appEvent).getNode());
                 cssfxTab.registerStage(appEvent.getStageID());
                 break;
@@ -1083,18 +1106,21 @@ public class ScenicViewGui {
                 final int removedPos = indexOfNode(((NodeAddRemoveEvent) appEvent).getNode(), true);
                 if (removedPos == -1) {
                     treeView.addNewNode(((NodeAddRemoveEvent) appEvent).getNode(), showNodesIdInTree.isSelected(), showFilteredNodesInTree.isSelected());
-                    threeDOMTab.reload();   // 3D addition
+                    needToReloadTreetab = true;
+//                    threeDOMTab.reload();   // 3D addition
+                    //todo
                 } else {
                     eventQueue.remove(removedPos);
                 }
-               
+
                 break;
             }
             case NODE_REMOVED: {
                 final int addedPos = indexOfNode(((NodeAddRemoveEvent) appEvent).getNode(), false);
                 if (addedPos == -1) {
                     treeView.removeNode(((NodeAddRemoveEvent) appEvent).getNode());
-                    threeDOMTab.removeNode(((NodeAddRemoveEvent) appEvent).getNode());   // 3D addition
+                    needToReloadTreetab = true;
+                    //threeDOMTab.reload();//(((NodeAddRemoveEvent) appEvent).getNode());   // 3D addition
                 } else {
                     eventQueue.remove(addedPos);
                 }
@@ -1103,7 +1129,7 @@ public class ScenicViewGui {
             case DETAILS: {
                 final DetailsEvent ev = (DetailsEvent) appEvent;
                 detailsTab.updateDetails(ev.getPaneType(), ev.getPaneName(), ev.getDetails(), (detail, value) -> {
-                    getStageController(appEvent.getStageID()).setDetail(detail.getDetailType(), detail.getDetailID(), value);   
+                    getStageController(appEvent.getStageID()).setDetail(detail.getDetailType(), detail.getDetailID(), value);
                 });
                 break;
             }
@@ -1116,9 +1142,9 @@ public class ScenicViewGui {
                 animationsTab.update(appEvent.getStageID(), ((AnimationsCountEvent) appEvent).getAnimations());
                 break;
             }
-            case CSS_ADDED: 
-            case CSS_REMOVED: 
-            case CSS_REPLACED: 
+            case CSS_ADDED:
+            case CSS_REMOVED:
+            case CSS_REPLACED:
                 cssfxTab.handleEvent(appEvent);
                 break;
             default: {
@@ -1126,6 +1152,10 @@ public class ScenicViewGui {
                 break;
             }
         }
+        if(needToReloadTreetab) {
+            Logger.print("Did Dispatch " + appEvent);
+        }
+        needToReloadTreetab = tempNeedsReload || needToReloadTreetab;
     }
 
     private int indexOfNode(final SVNode node, final boolean add) {
